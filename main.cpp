@@ -35,8 +35,8 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *
         {
             unsigned char *http_payload = tcp_header + ((tcp_header[12] >> 4) * 4);
 
-            if (strncmp((char *)http_payload, "GET ", 4) == 0 || strncmp((char *)http_payload, "POST ", 5) == 0) {
-
+            if (strncmp((char *)http_payload, "GET ", 4) == 0 || strncmp((char *)http_payload, "POST ", 5) == 0) 
+            {
                 char *host = strstr((char *)http_payload, "Host: ");
                 if (host)
                 {
@@ -50,7 +50,6 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *
             }
         }
     }
-
     return nfq_set_verdict(qh, id, NF_ACCEPT, 0, NULL);
 }
 
