@@ -28,22 +28,24 @@ static int cb(struct nfq_q_handle *qh, struct nfgenmsg *nfmsg, struct nfq_data *
     int ret = nfq_get_payload(nfa, &payload);
     if(ret > 0)
     {
-        unsigned char *ip = payload;
-        unsigned char *tcp = payload + 20;
-        unsigned char *http = tcp + 20;
+        unsigned char *ip_header = payload;
+        unsigned char *tcp_header = ip_header + ((ip_header[0] & 0x0f) * 4);
 
-        if (strncmp((char *)http, "GET ", 4) == 0 || strncmp((char *)http, "POST ", 5) == 0) {
-            char *host = strstr((char *)http, "Host: ");
-            if (host)
-            {
-                host += 6;
-                char *end = strstr(host, "\r\n");
-                if (end) *end = '\0';
+        if(ip_header[9] == 0x06)
+        {
+            unsigned char *http_payload = tcp_header + ((tcp_header[12] >> 4) * 4);
 
-                if (strcmp(host, blocked_host) == 0)
+            if (strncmp((char *)http_payload, "GET ", 4) == 0 || strncmp((char *)http_payload, "POST ", 5) == 0) {
+
+                char *host = strstr((char *)http_payload, "Host: ");
+                if (host)
                 {
-                    printf("Blocking request to %s\n", host);
-                    return nfq_set_verdict(qh, id, NF_DROP, 0, NULL);
+                    host += 6;
+                    if (strncmp(host, blocked_host, sizeof(blocked_host)) == 0)
+                    {
+                        printf("Blocking request to %s\n", host);
+                        return nfq_set_verdict(qh, id, NF_DROP, 0, NULL);
+                    }
                 }
             }
         }
